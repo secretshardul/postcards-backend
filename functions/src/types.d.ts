@@ -1,5 +1,3 @@
-import * as admin from 'firebase-admin'
-
 interface CreatePostcardQuery {
     title?: string, body?: string, imageUrl?: string, key?: string
 }
@@ -9,7 +7,7 @@ interface NotificationData {
 }
 
 interface Postcard extends NotificationData {
-    time: admin.firestore.Timestamp
+    time: Date
 }
 
 interface UserData {

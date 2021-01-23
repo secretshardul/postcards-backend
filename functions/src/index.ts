@@ -19,7 +19,7 @@ const db = admin.firestore()
 const fcm = admin.messaging()
 const usersCol = db.collection('users')
 
-const FieldValue = admin.firestore.FieldValue;
+const FieldValue = admin.firestore.FieldValue
 
 // Express setup
 const app = express()
@@ -27,8 +27,6 @@ app.use(cors({ origin: true }))
 
 // Sendgrid setup
 const sgSecrets: SendGridSecrets = functions.config().sendgrid
-console.log('Sendgrid secrets', sgSecrets)
-
 sgMail.setApiKey(sgSecrets.apikey)
 
 async function getUserData(key: string): Promise<UserData | undefined> {
@@ -233,6 +231,64 @@ app.delete('/:postcardId', async (req, res) => {
         postcards
     })
     return res.status(200).send()
+})
+
+/**
+ * Update postcard at given index
+ */
+app.put('/:postcardId', async (req, res) => {
+    const { key, title, body, imageUrl } = req.query as CreatePostcardQuery
+    const postcardId = req.params.postcardId as string | undefined
+    if (!key) {
+        return res.status(401).send('Missing key')
+    } else if (!postcardId) {
+        return res.status(400).send('Postcard ID not provided')
+    }
+
+    // Convert ID to index number
+    const postcardIndex = Number(postcardId)
+    if (isNaN(postcardIndex)) {
+        return res.status(400).send('Postcard ID is not a number')
+    }
+
+    // Fetch user data from Firestore, using key
+    const userData = await getUserData(key)
+    if (!userData) {
+        return res.status(401).send('Invalid key')
+    }
+
+    // Check if postcards array is present
+    const postcards = userData.postcards
+    if (!postcards) {
+        return res.status(404).send('No postcards for user')
+    }
+
+    // Check if postcard present for given index
+    const postcard: Postcard | undefined = postcards[postcardIndex]
+    if (!postcard) {
+        return res.status(404).send('No postcard for given ID')
+    }
+
+    // Replace fields
+    if (title) {
+        postcard.title = title
+    }
+    if (body) {
+        postcard.body = body
+    }
+    if (imageUrl) {
+        postcard.imageUrl = imageUrl
+    }
+    postcard.time = new Date()
+
+    try {
+        await usersCol.doc(key).update({
+            postcards
+        })
+        return res.status(200).send()
+    } catch (error) {
+        return res.status(500).send('Failed to update')
+    }
 })
 
 export const api = functions.region('asia-south1').https.onRequest(app)
