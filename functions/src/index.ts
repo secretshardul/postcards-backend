@@ -19,6 +19,8 @@ const db = admin.firestore()
 const fcm = admin.messaging()
 const usersCol = db.collection('users')
 
+const FieldValue = admin.firestore.FieldValue;
+
 // Express setup
 const app = express()
 app.use(cors({ origin: true }))
@@ -71,7 +73,7 @@ app.post('/', async (req, res) => {
         })
 
         await usersCol.doc(key).update({
-            postcards: admin.firestore.FieldValue.arrayUnion({
+            postcards: FieldValue.arrayUnion({
                 ...notification,
                 time: new Date(),
             }),
@@ -166,10 +168,34 @@ app.post('/email/:email', async (req, res) => {
             api_key: key,
         },
     }
-    const emailResp = await sgMail.send(msg)
-    console.log('Email response', emailResp)
+    try {
+        const emailResp = await sgMail.send(msg)
+        console.log('Email response', emailResp)
 
-    return res.status(201).send()
+        return res.status(201).send()
+    } catch (error) {
+        return res.status(500).send('Failed to send email')
+    }
+
+})
+
+/**
+ * Delete all postcards for given user
+ */
+app.delete('/', async (req, res) => {
+    console.log('Got query', req.query)
+    const key = req.query.key as string | undefined
+    if (!key) {
+        return res.status(401).send('Missing key')
+    }
+    try {
+        await usersCol.doc(key).update({
+            postcards: FieldValue.delete()
+        })
+        return res.status(200).send()
+    } catch (error) {
+        return res.status(401).send('Invalid key')
+    }
 })
 
 export const api = functions.region('asia-south1').https.onRequest(app)
