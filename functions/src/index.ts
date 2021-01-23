@@ -25,8 +25,12 @@ app.post('/', async (req, res) => {
     } else if (!body) {
         return res.status(400).send('Missing "body" query parameter')
     } else {
-        const userData = await getUserData(key) as UserData
+        const userData = await getUserData(key)
         console.log('User data', userData)
+
+        if (!userData) {
+            return res.status(401).send('Invalid key')
+        }
 
         const notification: NotificationData = {
             title,
@@ -52,8 +56,8 @@ app.post('/', async (req, res) => {
     }
 })
 
-async function getUserData(key: string) {
+async function getUserData(key: string): Promise<UserData | undefined> {
     const response = await usersCol.doc(key).get()
-    return response.data()
+    return response.data() as UserData | undefined
 }
 export const api = functions.region('asia-south1').https.onRequest(app)
