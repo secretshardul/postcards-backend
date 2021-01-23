@@ -10,3 +10,6 @@ typings/
 
 # Node.js dependency directory
 node_modules/
+
+# Firebase service account key: for testing
+postcards-api-notifications-d122660cd689.json

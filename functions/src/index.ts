@@ -2,21 +2,32 @@ import * as functions from 'firebase-functions'
 import * as express from 'express'
 import * as cors from 'cors'
 import * as admin from 'firebase-admin'
+import * as EmailValidator from 'email-validator'
+import * as sgMail from '@sendgrid/mail'
 import {
     NotificationData,
     CreatePostcardQuery,
     UserData,
     GetAllPostcardsQuery,
-    Postcard
+    Postcard,
+    SendGridSecrets,
 } from './types'
 
+// Firebase setup
 admin.initializeApp()
 const db = admin.firestore()
 const fcm = admin.messaging()
 const usersCol = db.collection('users')
 
+// Express setup
 const app = express()
 app.use(cors({ origin: true }))
+
+// Sendgrid setup
+const sgSecrets: SendGridSecrets = functions.config().sendgrid
+console.log('Sendgrid secrets', sgSecrets)
+
+sgMail.setApiKey(sgSecrets.apikey)
 
 async function getUserData(key: string): Promise<UserData | undefined> {
     const response = await usersCol.doc(key).get()
@@ -48,7 +59,7 @@ app.post('/', async (req, res) => {
 
         const notification: NotificationData = {
             title,
-            body
+            body,
         }
         if (imageUrl) {
             notification['imageUrl'] = imageUrl
@@ -56,14 +67,14 @@ app.post('/', async (req, res) => {
 
         await fcm.send({
             notification,
-            token: userData.fcmToken
+            token: userData.fcmToken,
         })
 
         await usersCol.doc(key).update({
             postcards: admin.firestore.FieldValue.arrayUnion({
                 ...notification,
-                time: new Date()
-            })
+                time: new Date(),
+            }),
         })
 
         return res.status(201).send()
@@ -123,6 +134,42 @@ app.get('/:postcardId', async (req, res) => {
     }
 
     return res.status(200).send(postcard)
+})
+
+app.post('/email/:email', async (req, res) => {
+    console.log('Got query', req.query)
+    const key = req.query.key as string | undefined
+    const email = req.params.email as string | undefined
+    if (!key) {
+        return res.status(401).send('Missing key')
+    } else if (!email) {
+        return res.status(400).send('Email not provided')
+    } else if (!EmailValidator.validate(email)) {
+        return res.status(42).send('Email is not of valid format')
+    }
+
+    // Fetch user data from Firestore, using key
+    const userData = await getUserData(key)
+    if (!userData) {
+        return res.status(401).send('Invalid key')
+    }
+
+    // Send email
+    const msg = {
+        to: email,
+        from: {
+            email: sgSecrets.senderemail,
+            name: 'Postcards App',
+        },
+        templateId: sgSecrets.templateid,
+        dynamic_template_data: {
+            api_key: key,
+        },
+    }
+    const emailResp = await sgMail.send(msg)
+    console.log('Email response', emailResp)
+
+    return res.status(201).send()
 })
 
 export const api = functions.region('asia-south1').https.onRequest(app)

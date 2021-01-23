@@ -14,11 +14,17 @@ interface Postcard extends NotificationData {
 
 interface UserData {
     fcmToken: string,
-    postcards?: Postcard[]
+    postcards?: Postcard[],
 }
 
 interface GetAllPostcardsQuery {
-    key?: string
+    key?: string,
+}
+
+interface SendGridSecrets {
+    apikey: string,
+    templateid: string,
+    senderemail: string,
 }
 
 export {
@@ -26,5 +32,6 @@ export {
     NotificationData,
     Postcard,
     UserData,
-    GetAllPostcardsQuery
+    GetAllPostcardsQuery,
+    SendGridSecrets,
 }

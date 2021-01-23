@@ -13,6 +13,9 @@ firebase-debug.*.log*
 # Firebase service account key: for testing
 postcards-api-notifications-d122660cd689.json
 
+# Sendgrid config
+.runtimeconfig.json
+
 # Firebase config
 
 # Uncomment this if you'd like others to create their own Firebase project.
