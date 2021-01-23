@@ -188,7 +188,7 @@ app.delete('/', async (req, res) => {
     }
     try {
         await usersCol.doc(key).update({
-            postcards: FieldValue.delete()
+            postcards: FieldValue.delete(),
         })
         return res.status(200).send()
     } catch (error) {
@@ -228,7 +228,7 @@ app.delete('/:postcardId', async (req, res) => {
     postcards.splice(postcardIndex, 1)
 
     await usersCol.doc(key).update({
-        postcards
+        postcards,
     })
     return res.status(200).send()
 })
@@ -283,7 +283,7 @@ app.put('/:postcardId', async (req, res) => {
 
     try {
         await usersCol.doc(key).update({
-            postcards
+            postcards,
         })
         return res.status(200).send()
     } catch (error) {
