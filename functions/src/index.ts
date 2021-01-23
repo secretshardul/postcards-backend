@@ -198,4 +198,41 @@ app.delete('/', async (req, res) => {
     }
 })
 
+/**
+ * Delete postcards at a given index
+ */
+app.delete('/:postcardId', async (req, res) => {
+    const key = req.query.key as string | undefined
+    const postcardId = req.params.postcardId as string | undefined
+    if (!key) {
+        return res.status(401).send('Missing key')
+    } else if (!postcardId) {
+        return res.status(400).send('Postcard ID not provided')
+    }
+
+    // Convert ID to index number
+    const postcardIndex = Number(postcardId)
+    if (isNaN(postcardIndex)) {
+        return res.status(400).send('Postcard ID is not a number')
+    }
+
+    // Fetch user data from Firestore, using key
+    const userData = await getUserData(key)
+    if (!userData) {
+        return res.status(401).send('Invalid key')
+    }
+
+    // Check if postcards array is present
+    const postcards = userData.postcards
+    if (!postcards) {
+        return res.status(404).send('No postcards for user')
+    }
+    postcards.splice(postcardIndex, 1)
+
+    await usersCol.doc(key).update({
+        postcards
+    })
+    return res.status(200).send()
+})
+
 export const api = functions.region('asia-south1').https.onRequest(app)
