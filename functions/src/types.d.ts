@@ -1,13 +1,16 @@
-type Query = {
-    title: string, body: string, imageUrl?: string, key: string
+interface Query {
+    title?: string, body?: string, imageUrl?: string, key?: string
 }
 
-type Postcard = {
-    title: string, body: string, imageUrl?: string, time: Date
+interface NotificationData {
+    title: string, body: string, imageUrl?: string
 }
-type UserData = {
+interface Postcard extends NotificationData {
+    time: Date
+}
+interface UserData {
     fcmToken: string,
     postcards?: Postcard[]
 }
 
-export { Query, Postcard, UserData }
+export { Query, NotificationData, Postcard, UserData }
