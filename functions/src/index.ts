@@ -291,4 +291,4 @@ app.put('/:postcardId', async (req, res) => {
     }
 })
 
-export const api = functions.region('asia-south1').https.onRequest(app)
+export const api = functions.region('us-central1').https.onRequest(app)
