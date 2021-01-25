@@ -136,6 +136,9 @@ app.get('/:postcardId', async (req, res) => {
     return res.status(200).send(postcard)
 })
 
+/**
+ * Send API key and instructions on user's email
+ */
 app.post('/email/:email', async (req, res) => {
     console.log('Got query', req.query)
     const key = req.query.key as string | undefined
@@ -145,7 +148,7 @@ app.post('/email/:email', async (req, res) => {
     } else if (!email) {
         return res.status(400).send('Email not provided')
     } else if (!EmailValidator.validate(email)) {
-        return res.status(42).send('Email is not of valid format')
+        return res.status(402).send('Email is not of valid format')
     }
 
     // Fetch user data from Firestore, using key
@@ -291,4 +294,8 @@ app.put('/:postcardId', async (req, res) => {
     }
 })
 
-export const api = functions.region('us-central1').https.onRequest(app)
+// Top level function for Firebase hosting redirects
+const main = express()
+main.use('/api', app)
+
+exports.main = functions.region('us-central1').https.onRequest(main)
